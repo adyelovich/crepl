@@ -18,7 +18,7 @@ fn main() {
 
         match stdin().read_line(&mut line) {
             Ok(0) => break,
-            Ok(_) => interp(Expr::parse(Token::tokenize(&line))),
+            Ok(_) => interp(Expr::parse_statement(Token::tokenize(&line))),
             Err(e) => {
                 eprintln!("encoutered error: {}", e);
                 break;
