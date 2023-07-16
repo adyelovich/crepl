@@ -1,0 +1,22 @@
+These are my notes for what a possible CFG for C is (in the sense of an interpreter):
+
+a `line` is the highest level for C, where "something" gets done:
+
+line = statement
+     | directive
+
+(For now let's not worry about directives)
+A `statement` is where C source code lives, some examples:
+int x = 42;
+unsigned long f(int x, int y) { return x + y; }
+
+statement = declaration
+          | expression
+
+A `declaration` is where we give the name of a variable or function to which
+later code refers
+
+declaration = type var ';'
+            | type var '=' expression ';'
+            | type func_var '(' func_params ')' ';'
+            | type func_var '(' func_params ')' '{' line '}'

@@ -21,6 +21,7 @@ something else after that, panic.
 
 use crate::lexer::Token;
 use std::collections::VecDeque;
+use std::fmt;
 
 #[derive(PartialEq, Debug)]
 pub enum Expr {
@@ -30,25 +31,21 @@ pub enum Expr {
 
 /*
 #[derive(PartialEq, Debug)]
-struct Error<'a> {
-    kind: ErrorKind,
-    msg: &'a str,
+struct Error(ErrorType);
+
+enum ErrorType {
+    MultExpr
 }
 
-#[derive(PartialEq, Debug)]
-enum ErrorKind {
-    MultExpr,
-}
-
-impl Error {
-    pub fn new(kind: ErrorKind, msg: &str) -> Error {
-        Error {
-            kind,
-            msg,
+impl fmt::Display for Error {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        use ErrorType::*;
+        match self.0 {
+            MultExpr => write!(f, "too many expressions given!"),
         }
     }
-}
-*/
+}*/
+
 /* So far an arbitrary number of statements are allowed, followed by
    an optional expression */
 impl Expr {
@@ -58,26 +55,18 @@ impl Expr {
 
         while tokens.len() > 0 {
             if let Some(e) = Self::parse_expr(&mut tokens) {
-                if let Some(front) = tokens.front() {
-                    match front {
-                        Token::TokSemicolon => {
-                            tokens.pop_front();
-                            statements.push(e);
-                        },
-                        _ => {
-                            if tokens.len() == 0 {
-                                statements.push(e);
-                            } else {
-                                panic!("too many expressions given!");
-                            }
-                        }
-                    }
-                } else {
-                    if tokens.len() == 0 {
+                match tokens.front() {
+                    Some(Token::TokSemicolon) => {
+                        tokens.pop_front();
                         statements.push(e);
-                    } else {
-                        panic!("too many expressions given!");
-                    }
+                    },
+                    _ => {
+                        if tokens.len() == 0 {
+                            statements.push(e);
+                        } else {
+                            panic!("too many expressions given!");
+                        }
+                    },
                 }
             } else {
                 tokens.pop_front();
@@ -86,16 +75,40 @@ impl Expr {
 
         statements
     }
+
     
-    // fn parse_expr(mut tokens: VecDeque<Token>) -> Vec<Expr> {
+    // pub fn parse_statement(mut tokens: VecDeque<Token>) -> Vec<Expr> {
+    //     let mut ret: Option<Error> = None;
     //     let mut statements: Vec<Expr> = Vec::new();
 
     //     while tokens.len() > 0 {
-    //         if let Some(e) = Self::build_expr(&mut tokens) {
-    //             statements.push(e);
+    //         if let Some(e) = Self::parse_expr(&mut tokens) {
+    //             if let Some(front) = tokens.front() {
+    //                 match front {
+    //                     Token::TokSemicolon => {
+    //                         tokens.pop_front();
+    //                         statements.push(e);
+    //                     },
+    //                     _ => {
+    //                         if tokens.len() == 0 {
+    //                             statements.push(e);
+    //                         } else {
+    //                             panic!("too many expressions given!");
+    //                         }
+    //                     }
+    //                 }
+    //             } else {
+    //                 if tokens.len() == 0 {
+    //                     statements.push(e);
+    //                 } else {
+    //                     panic!("too many expressions given!");
+    //                 }
+    //             }
+    //         } else {
+    //             tokens.pop_front();
     //         }
     //     }
-        
+
     //     statements
     // }
 
