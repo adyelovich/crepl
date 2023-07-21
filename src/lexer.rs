@@ -1,5 +1,6 @@
 use regex::Regex;
 use std::collections::VecDeque;
+use std::fmt;
 
 struct CLangToken {
     pub regex: Regex,
@@ -15,6 +16,21 @@ impl CLangToken {
     }
 }
 
+#[derive(PartialEq, Debug)]
+pub enum Error<'a> {
+    UnknownToken(&'a str)
+}
+
+impl <'a> fmt::Display for Error<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        use Error::*;
+        match self {
+            UnknownToken(s) => write!(f, "Encountered unknown token: {}", s),
+        }
+    }
+}
+
+
 /*
 Loop over all the regexes, for each one, check if it matches at
 the start of the word, if it does then wrap it in its correpsonding
@@ -27,7 +43,7 @@ pub enum Token {
 }
 
 impl Token {
-    pub fn tokenize(line: &str) -> VecDeque<Token> {
+    pub fn tokenize(line: &str) -> Result<VecDeque<Token>, Error<'_>> {
         let handlers = Self::init_handlers();
         let num_handlers = handlers.len();
         let mut toks: VecDeque<Token> = VecDeque::new();
@@ -57,11 +73,11 @@ impl Token {
             }
 
             if pos != length { //we did not reach the end, must be a lex error
-                panic!["Unknown token: `{}`", word];
+                return Err(Error::UnknownToken(word));
             }
         }
 
-        toks
+        Ok(toks)
     }
 
     fn init_handlers() -> Vec<CLangToken> {
@@ -81,41 +97,41 @@ mod tests {
     
     #[test]
     fn tokenize_nothing() {
-        assert_eq![Token::tokenize(""), VecDeque::from([])];
+        assert_eq![Token::tokenize(""), Ok(VecDeque::from([]))];
     }
     
     #[test]
     fn tokenize_int32_single() {
-        assert_eq![Token::tokenize("5"), VecDeque::from([Token::TokInt(5)])];
+        assert_eq![Token::tokenize("5"), Ok(VecDeque::from([Token::TokInt(5)]))];
     }
 
     #[test]
     fn tokenize_int32_multi() {
-        assert_eq![Token::tokenize("36127"), VecDeque::from([Token::TokInt(36127)])];
+        assert_eq![Token::tokenize("36127"), Ok(VecDeque::from([Token::TokInt(36127)]))];
     }
 
     #[test]
     fn tokenize_int32_neg() {
-        assert_eq![Token::tokenize("-42"), VecDeque::from([Token::TokInt(-42)])];
+        assert_eq![Token::tokenize("-42"), Ok(VecDeque::from([Token::TokInt(-42)]))];
     }
 
     #[test]
     fn tokenize_int32_semi() {
-        assert_eq![Token::tokenize(";"), VecDeque::from([Token::TokSemicolon])];
+        assert_eq![Token::tokenize(";"), Ok(VecDeque::from([Token::TokSemicolon]))];
     }
 
     #[test]
     fn tokenize_int32_many() {
         use Token::*;
         assert_eq![Token::tokenize("42; 21;; 1;0;"),
-                   VecDeque::from([TokInt(42), TokSemicolon, TokInt(21), TokSemicolon,
+                   Ok(VecDeque::from([TokInt(42), TokSemicolon, TokInt(21), TokSemicolon,
                         TokSemicolon,
-                        TokInt(1), TokSemicolon, TokInt(0), TokSemicolon])];
+                        TokInt(1), TokSemicolon, TokInt(0), TokSemicolon]))];
     }
 
     #[test]
-    #[should_panic(expected = "Unknown token")]
     fn tokenize_wrong_int32() {
-        Token::tokenize("42n4");
+        let result = Token::tokenize("42n4");
+        assert!(result.is_err());
     }
 }

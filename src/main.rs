@@ -17,12 +17,40 @@ fn main() {
         let _ = stdout().flush();
 
         match stdin().read_line(&mut line) {
-            Ok(0) => break,
-            Ok(_) => interp(Expr::parse_statement(Token::tokenize(&line))),
+            Ok(0) => {
+                let _ = stdout().write(b"\n");
+                let _ = stdout().flush();
+                break;
+            },
+            Ok(_) => process_line(&line),
             Err(e) => {
-                eprintln!("encoutered error: {}", e);
+                eprintln!("encoutered I/O error: {}", e);
                 break;
             }
         }
     }
+}
+
+fn process_line(line: &str) -> () {
+    let tokens;
+    let exprs;
+    
+    
+    match Token::tokenize(&line) {
+        Ok(v) => tokens = v,
+        Err(e) => {
+            eprintln!("Lex error: {}", e);
+            return;
+        }
+    }
+
+    match Expr::parse_statement(tokens) {
+        Ok(v) => exprs = v,
+        Err(e) => {
+            eprintln!("parse error: {}", e);
+            return;
+        }
+    }
+
+    interp(exprs);
 }
